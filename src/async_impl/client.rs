@@ -250,6 +250,9 @@ impl ClientBuilder {
             match config.tls {
                 #[cfg(feature = "default-tls")]
                 TlsBackend::Default => {
+
+                    tracing::debug!("before creating tls");
+
                     let mut tls = TlsConnector::builder();
 
                     #[cfg(feature = "native-tls-alpn")]
@@ -275,6 +278,8 @@ impl ClientBuilder {
                     tls.danger_accept_invalid_certs(!config.certs_verification);
 
                     tls.disable_built_in_roots(!config.tls_built_in_root_certs);
+
+                    tracing::debug!("before root_certs");
 
                     for cert in config.root_certs {
                         cert.add_to_native_tls(&mut tls);
@@ -307,6 +312,8 @@ impl ClientBuilder {
                         })?;
                         tls.max_protocol_version(Some(protocol));
                     }
+
+                    tracing::debug!("before new_default_tls");
 
                     Connector::new_default_tls(
                         http,
