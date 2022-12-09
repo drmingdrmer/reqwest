@@ -217,10 +217,14 @@ impl Connector {
     where
         T: Into<Option<IpAddr>>,
     {
+        tracing::debug!("new_default_tls: before build");
         let tls = tls.build().map_err(crate::error::builder)?;
-        Ok(Self::from_built_default_tls(
+        tracing::debug!("new_default_tls: after build");
+        let x = Ok(Self::from_built_default_tls(
             http, tls, proxies, user_agent, local_addr, nodelay,
-        ))
+        ));
+        tracing::debug!("new_default_tls: done");
+        x
     }
 
     #[cfg(feature = "default-tls")]
@@ -235,8 +239,13 @@ impl Connector {
     where
         T: Into<Option<IpAddr>>,
     {
+        tracing::debug!("from_built_default_tls: start");
+
         http.set_local_address(local_addr.into());
+        tracing::debug!("from_built_default_tls: after set_local_address");
         http.enforce_http(false);
+
+        tracing::debug!("from_built_default_tls: before return");
 
         Connector {
             inner: Inner::DefaultTls(http, tls),

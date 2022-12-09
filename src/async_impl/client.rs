@@ -314,15 +314,18 @@ impl ClientBuilder {
                     }
 
                     tracing::debug!("before new_default_tls");
+                    tracing::debug!("proxies.len: {}", proxies.len());
 
-                    Connector::new_default_tls(
+                    let x = Connector::new_default_tls(
                         http,
                         tls,
                         proxies.clone(),
                         user_agent(&config.headers),
                         config.local_address,
                         config.nodelay,
-                    )?
+                    )?;
+                    tracing::debug!("done new_default_tls");
+                    x
                 }
                 #[cfg(feature = "native-tls")]
                 TlsBackend::BuiltNativeTls(conn) => Connector::from_built_default_tls(
