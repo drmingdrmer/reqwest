@@ -198,7 +198,10 @@ impl ClientBuilder {
     ///
     /// This method fails if a TLS backend cannot be initialized, or the resolver
     /// cannot load the system configuration.
+    #[tracing::instrument(level = "debug", skip_all)]
     pub fn build(self) -> crate::Result<Client> {
+        tracing::debug!("start build");
+
         let config = self.config;
 
         if let Some(err) = config.error {
@@ -211,11 +214,15 @@ impl ClientBuilder {
         }
         let proxies = Arc::new(proxies);
 
+        tracing::debug!("before connector");
+
         let mut connector = {
             #[cfg(feature = "__tls")]
             fn user_agent(headers: &HeaderMap) -> Option<HeaderValue> {
                 headers.get(USER_AGENT).cloned()
             }
+
+            tracing::debug!("before create http");
 
             let http = match config.trust_dns {
                 false => {
@@ -236,6 +243,8 @@ impl ClientBuilder {
                 #[cfg(not(feature = "trust-dns"))]
                 true => unreachable!("trust-dns shouldn't be enabled unless the feature is"),
             };
+
+            tracing::debug!("done create http");
 
             #[cfg(feature = "__tls")]
             match config.tls {
@@ -460,6 +469,8 @@ impl ClientBuilder {
             Connector::new(http, proxies.clone(), config.local_address, config.nodelay)
         };
 
+        tracing::debug!("done connector");
+
         connector.set_timeout(config.connect_timeout);
         connector.set_verbose(config.connection_verbose);
 
@@ -492,6 +503,8 @@ impl ClientBuilder {
             builder.http2_keep_alive_while_idle(true);
         }
 
+        tracing::debug!("done hyper builder");
+
         builder.pool_idle_timeout(config.pool_idle_timeout);
         builder.pool_max_idle_per_host(config.pool_max_idle_per_host);
         connector.set_keepalive(config.tcp_keepalive);
@@ -508,9 +521,15 @@ impl ClientBuilder {
             builder.http1_allow_obsolete_multiline_headers_in_responses(true);
         }
 
+        tracing::debug!("before building hyper_client");
+
         let hyper_client = builder.build(connector);
 
+        tracing::debug!("done building hyper_client");
+
         let proxies_maybe_http_auth = proxies.iter().any(|p| p.maybe_has_http_auth());
+
+        tracing::debug!("done proxy");
 
         Ok(Client {
             inner: Arc::new(ClientRef {

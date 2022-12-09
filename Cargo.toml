@@ -84,6 +84,9 @@ serde = "1.0"
 serde_urlencoded = "0.7.1"
 tower-service = "0.3"
 
+tracing = "0.1.29"
+
+
 # Optional deps...
 
 ## json
